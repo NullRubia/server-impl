@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <title>게시글 보기</title>
+  </head>
+  <body>
+    <h2>게시글 내용</h2>
+    <div id="post"></div>
+    <div id="buttons"></div>
+    <button onclick="goBack()">목록</button>
+
+    <script>
+      const params = new URLSearchParams(location.search);
+      const id = params.get("id");
+      let postData = null;
+      let currentUserId = null;
+
+      async function loadUserInfo() {
+        const token = localStorage.getItem("token");
+        if (!token) return;
+
+        const res = await fetch("http://localhost:8080/users/info", {
+          headers: { Authorization: "Bearer " + token },
+        });
+
+        if (res.ok) {
+          const user = await res.json();
+          currentUserId = user.userid;
+        }
+      }
+
+      async function loadPost() {
+        const res = await fetch(`http://localhost:8080/posts/${id}`);
+        postData = await res.json();
+
+        const div = document.getElementById("post");
+        const formattedDate = postData.createdAt
+          ? new Date(postData.createdAt).toLocaleString("ko-KR")
+          : "-";
+
+        div.innerHTML = `
+            <h3>${postData.title}</h3>
+            <p>${postData.content}</p>
+            <p><small>작성자: ${
+              postData.writerId || "?"
+            } | 작성일: ${formattedDate}</small></p>
+            `;
+
+        renderButtons();
+      }
+
+      function renderButtons() {
+        if (!currentUserId || currentUserId !== postData.writerId) return;
+
+        const div = document.getElementById("buttons");
+        div.innerHTML = `
+        <button onclick="goEdit()">수정</button>
+        <button onclick="deletePost()">삭제</button>
+      `;
+      }
+
+      function goEdit() {
+        location.href = `postwrite.html?edit=${postData.id}`;
+      }
+
+      async function deletePost() {
+        if (!confirm("정말 삭제하시겠습니까?")) return;
+
+        const token = localStorage.getItem("token");
+
+        const res = await fetch(`http://localhost:8080/posts/${postData.id}`, {
+          method: "DELETE",
+          headers: {
+            Authorization: "Bearer " + token,
+          },
+        });
+
+        if (res.ok) {
+          alert("삭제되었습니다.");
+          location.href = "postlist.html";
+        } else {
+          alert("삭제 실패");
+        }
+      }
+
+      function goBack() {
+        location.href = "postlist.html";
+      }
+
+      (async () => {
+        await loadUserInfo();
+        await loadPost();
+      })();
+    </script>
+  </body>
+</html>

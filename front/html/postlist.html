@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <title>게시판 목록</title>
+    <style>
+      ul {
+        list-style: none;
+        padding-left: 0;
+      }
+      li {
+        margin-bottom: 10px;
+      }
+      .pagination button {
+        margin: 0 2px;
+        padding: 4px 8px;
+      }
+      .pagination button.active {
+        font-weight: bold;
+        background-color: #eee;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>게시글 목록</h2>
+    <button onclick="location.href='postwrite.html'">글 작성</button>
+
+    <ul id="postList"></ul>
+    <div class="pagination" id="pagination"></div>
+
+    <script>
+      let posts = [];
+      let currentPage = 1;
+      const pageSize = 10;
+
+      async function loadPosts() {
+        const res = await fetch("http://localhost:8080/posts");
+        posts = await res.json();
+        renderPage(currentPage);
+        renderPagination();
+      }
+
+      function renderPage(page) {
+        const start = (page - 1) * pageSize;
+        const end = start + pageSize;
+        const pagePosts = posts.slice(start, end);
+
+        const list = document.getElementById("postList");
+        list.innerHTML = "";
+
+        pagePosts.forEach((post) => {
+          const formattedDate = post.createdAt
+            ? new Date(post.createdAt).toLocaleString("ko-KR")
+            : "-";
+
+          const li = document.createElement("li");
+          li.innerHTML = `
+            <a href="postview.html?id=${post.id}">${post.title}</a><br>
+            <small>작성자: ${
+              post.writerId || "?"
+            } | 작성일: ${formattedDate}</small>
+            `;
+          list.appendChild(li);
+        });
+      }
+
+      function renderPagination() {
+        const totalPages = Math.ceil(posts.length / pageSize);
+        const pagination = document.getElementById("pagination");
+        pagination.innerHTML = "";
+
+        for (let i = 1; i <= totalPages; i++) {
+          const btn = document.createElement("button");
+          btn.textContent = i;
+
+          btn.onclick = () => {
+            currentPage = i;
+            renderPage(currentPage);
+            renderPagination(); // 다시 렌더링해야 강조 표시 적용
+          };
+
+          if (i === currentPage) {
+            btn.classList.add("active");
+          }
+
+          pagination.appendChild(btn);
+        }
+      }
+
+      loadPosts();
+    </script>
+  </body>
+</html>

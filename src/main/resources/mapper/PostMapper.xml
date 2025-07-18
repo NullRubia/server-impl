@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.koreait.spring1.mapper.PostMapper">
+
+    <insert id="insertPost" parameterType="Post">
+        INSERT INTO posts (title, content, writer_id)
+        VALUES (#{title}, #{content}, #{writerId});
+    </insert>
+
+    <select id="getAllPosts" resultType="com.koreait.spring1.dto.PostListDTO">
+        SELECT
+            p.id,
+            p.title,
+            u.userid AS writerId,         -- 사용자 ID 문자열 (작성자)
+            p.created_at AS createdAt
+        FROM posts p
+                 JOIN users u ON p.writer_id = u.id
+        ORDER BY p.created_at DESC
+    </select>
+
+    <select id="getPostById" resultType="com.koreait.spring1.dto.PostListDTO">
+        SELECT
+            p.id,
+            p.title,
+            p.content,
+            u.userid AS writerId,
+            p.created_at AS createdAt
+        FROM posts p
+                 JOIN users u ON p.writer_id = u.id
+        WHERE p.id = #{id}
+    </select>
+
+    <update id="updatePost" parameterType="Post">
+        UPDATE posts
+        SET title = #{title},
+            content = #{content}
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deletePost" parameterType="int">
+        DELETE FROM posts WHERE id = #{id}
+    </delete>
+
+</mapper>
